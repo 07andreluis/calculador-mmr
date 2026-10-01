@@ -349,9 +349,10 @@ body {
   -webkit-appearance: none;
   margin: 0;
 }
-/* Firefox */
+/* Firefox & Standard */
 .mmr-number-input[type=number] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .mmr-unit {

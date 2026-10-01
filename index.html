@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculador de Medalha & MMR Dota 2 | Classificações Sazonais</title>
+  <meta name="description" content="Calcule instantaneamente a medalha correspondente ao seu MMR no Dota 2 e a porcentagem exata de progresso para a próxima estrela, baseado nas estimativas da Dota 2 Wiki.">
+  <meta name="keywords" content="Dota 2, MMR, Calculador MMR, Medalhas Dota 2, Ranks Dota 2, Arauto, Guardião, Cruzado, Arconte, Lenda, Ancestral, Divino, Imortal, Porcentagem medalha">
+  <meta name="author" content="Dota 2 MMR Calculator">
+  
+  <!-- Open Graph / Social Meta -->
+  <meta property="og:title" content="Calculador de Medalha & MMR - Dota 2">
+  <meta property="og:description" content="Descubra sua medalha e a porcentagem necessária para subir para a próxima estrela no Dota 2!">
+  <meta property="og:type" content="website">
+
+  <!-- Google Fonts: Cinzel & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="assets/images/rank_icon_8.png">
+</head>
+<body>
+  <div class="ambient-glow" id="ambientGlow"></div>
+  <div class="stars-particle-canvas" id="canvasParticles"></div>
+
+  <header class="site-header">
+    <div class="header-container">
+      <div class="brand">
+        <svg class="dota-symbol" viewBox="0 0 100 100" aria-label="Símbolo Dota 2">
+          <defs>
+            <linearGradient id="dotaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ff4b3e" />
+              <stop offset="100%" stop-color="#800f08" />
+            </linearGradient>
+            <filter id="dotaShadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#ff3b30" flood-opacity="0.5"/>
+            </filter>
+          </defs>
+          <rect width="100" height="100" rx="16" fill="#140a0a" stroke="#d9383a" stroke-width="2"/>
+          <path d="M18 18 L48 18 L18 82 Z" fill="url(#dotaGrad)" filter="url(#dotaShadow)"/>
+          <path d="M82 82 L52 82 L82 18 Z" fill="url(#dotaGrad)" filter="url(#dotaShadow)"/>
+          <polygon points="56,26 44,74 48,74 60,26" fill="#ff7669"/>
+        </svg>
+        <div class="brand-text">
+          <h1>DOTA 2 <span>CALCULADOR DE MMR</span></h1>
+          <p class="tagline">Medalha e porcentagem para a próxima estrela</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <a href="https://dota2.fandom.com/pt/wiki/Cria%C3%A7%C3%A3o_de_partidas/Classifica%C3%A7%C3%B5es_sazonais" 
+           target="_blank" 
+           rel="noopener noreferrer" 
+           class="wiki-badge"
+           title="Consultar artigo de referência na Dota 2 Wiki">
+          <span class="pulse-dot"></span>
+          Fonte: Dota 2 Wiki PT
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+        <button id="soundToggleBtn" class="icon-btn" title="Alternar efeitos sonoros" aria-label="Efeitos Sonoros">
+          <span id="soundIcon">🔊</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container">
+      
+      <!-- Top Calculator Grid -->
+      <section class="calculator-grid">
+        
+        <!-- Left Column: MMR Input & Controls -->
+        <div class="panel glass-card input-panel">
+          <div class="panel-header">
+            <div class="step-num">1</div>
+            <div>
+              <h2>Insira seu MMR</h2>
+              <p class="panel-desc">Digite ou ajuste o seu Rating de Partida Competitiva</p>
+            </div>
+          </div>
+
+          <div class="mmr-input-wrapper">
+            <div class="input-glow-frame">
+              <label for="mmrInput" class="sr-only">Valor do MMR</label>
+              <input 
+                type="number" 
+                id="mmrInput" 
+                class="mmr-number-input" 
+                placeholder="Ex: 3450" 
+                min="0" 
+                max="12000" 
+                value="2620"
+                step="1"
+                autocomplete="off"
+              >
+              <span class="mmr-unit">MMR</span>
+            </div>
+          </div>
+
+          <!-- Slider -->
+          <div class="slider-control">
+            <div class="slider-labels">
+              <span>0 MMR</span>
+              <span id="sliderMidLabel">~3000 (Lenda)</span>
+              <span>6000+ (Imortal)</span>
+            </div>
+            <input 
+              type="range" 
+              id="mmrSlider" 
+              class="range-slider" 
+              min="0" 
+              max="6500" 
+              value="2620" 
+              step="5"
+            >
+          </div>
+
+          <!-- Quick Delta (Match simulation) -->
+          <div class="quick-deltas">
+            <span class="quick-title">Simular Partida:</span>
+            <div class="delta-buttons">
+              <button class="delta-btn loss" data-delta="-30" title="Derrota (-30 MMR)">-30</button>
+              <button class="delta-btn loss" data-delta="-25" title="Derrota (-25 MMR)">-25</button>
+              <button class="delta-btn reset" id="resetBtn" title="Resetar">Reset</button>
+              <button class="delta-btn win" data-delta="+25" title="Vitória (+25 MMR)">+25</button>
+              <button class="delta-btn win" data-delta="+30" title="Vitória (+30 MMR)">+30</button>
+            </div>
+          </div>
+
+          <!-- Fast Bracket Presets -->
+          <div class="bracket-presets">
+            <span class="quick-title">Pular para Categoria:</span>
+            <div class="preset-chips" id="presetChips">
+              <!-- Injected dynamically: Arauto, Guardião, Cruzado, etc. -->
+            </div>
+          </div>
+
+          <!-- Share & Copy actions -->
+          <div class="panel-footer-actions">
+            <button id="copyShareBtn" class="action-btn secondary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              Copiar Resultado
+            </button>
+            <button id="shareLinkBtn" class="action-btn secondary" title="Copiar link com este MMR">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+              Compartilhar Link
+            </button>
+          </div>
+          <div id="copyNotification" class="copy-toast" aria-live="polite">Copiado para a área de transferência!</div>
+        </div>
+
+        <!-- Right Column: Medal Display & Progress Showcase -->
+        <div class="panel glass-card medal-panel" id="medalCard">
+          <div class="panel-header text-center">
+            <div class="step-num">2</div>
+            <div>
+              <h2 id="resultHeaderTitle">Medalha Conquistada</h2>
+              <p class="panel-desc">Classificação e percentual em tempo real</p>
+            </div>
+          </div>
+
+          <!-- Badge Showcase Area -->
+          <div class="medal-showcase">
+            <div class="badge-aura-wrapper" id="badgeAuraWrapper">
+              <div class="rank-badge-composite" id="rankBadgeComposite">
+                <!-- Base Rank Medal -->
+                <img id="rankBaseImg" class="rank-base-img" src="assets/images/rank_icon_4.png" alt="Medalha Dota 2">
+                <!-- Overlay Star Graphic -->
+                <img id="rankStarImg" class="rank-star-img" src="assets/images/rank_star_3.png" alt="Estrelas da Medalha">
+              </div>
+              <div class="badge-radial-glow" id="badgeRadialGlow"></div>
+            </div>
+
+            <!-- Rank Title & Subtitle -->
+            <div class="rank-text-group">
+              <h3 class="rank-title" id="rankTitle">ARCONTE 3</h3>
+              <div class="rank-sub" id="rankSubtitle">Archon • Tier 4 • 3 Estrelas</div>
+              <div class="item-lore-tag" id="itemLoreTag">
+                <span class="lore-icon">⚔️</span>
+                Inspirado em: <strong id="itemLoreName">Cetro Divino de Eul</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progress to Next Star Section -->
+          <div class="progress-section" id="progressSection">
+            <div class="progress-meta">
+              <div class="meta-col">
+                <span class="meta-label">Progresso da Estrela</span>
+                <div class="percent-highlight">
+                  <span id="percentNumber">50</span><span class="percent-symbol">%</span>
+                </div>
+              </div>
+
+              <div class="meta-col text-right">
+                <span class="meta-label">Próxima Conquista</span>
+                <span class="next-rank-badge-text" id="nextRankName">Arconte 4</span>
+              </div>
+            </div>
+
+            <!-- Glowing Progress Bar -->
+            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" id="progressTrack">
+              <div class="progress-fill" id="progressFill" style="width: 50%;">
+                <div class="progress-shine"></div>
+                <div class="progress-head-spark"></div>
+              </div>
+            </div>
+
+            <!-- Progress Details / Match forecast -->
+            <div class="progress-footer-stats">
+              <div class="stat-pill">
+                <span class="stat-label">MMR Deste Nível:</span>
+                <strong id="statCurrentBracket">2620 MMR</strong>
+              </div>
+              <div class="stat-pill">
+                <span class="stat-label">MMR Alvo:</span>
+                <strong id="statTargetBracket">2785 MMR</strong>
+              </div>
+              <div class="stat-pill highlight">
+                <span class="stat-label">Faltam:</span>
+                <strong id="statRemainingMmr">165 MMR</strong>
+              </div>
+            </div>
+
+            <!-- Win projection banner -->
+            <div class="forecast-banner" id="forecastBanner">
+              <div class="forecast-icon">🎯</div>
+              <div class="forecast-text" id="forecastText">
+                Você precisa de aproximadamente <strong>6 vitórias</strong> (+30 MMR cada) para alcançar a próxima estrela!
+              </div>
+            </div>
+          </div>
+
+          <!-- Immortal special state (when MMR >= 5620) -->
+          <div class="immortal-banner" id="immortalBanner" style="display: none;">
+            <div class="immortal-crown">👑</div>
+            <div class="immortal-info">
+              <h4>Classificação Imortal Alcançada!</h4>
+              <p>Parabéns! Você está no nível mais alto do Dota 2. Os jogadores Imortal entram na <strong>Tabela de Liderança Regional</strong> (Leaderboards) e recebem classificação numérica com partículas cintilantes exclusivas!</p>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- Next Tier Preview & Mini Breakdown -->
+      <section class="journey-preview-section">
+        <div class="panel glass-card journey-card">
+          <div class="journey-header">
+            <h3>🧭 Jornada da Sua Medalha</h3>
+            <span class="wiki-note">Valores aproximados conforme dados da Dota 2 Wiki Fandom</span>
+          </div>
+          <div class="journey-steps" id="journeySteps">
+            <!-- 5 mini badges representing stars 1 to 5 of the current tier -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Complete Ranks Table (Full Interactive View) -->
+      <section class="table-section">
+        <div class="panel glass-card table-panel">
+          <div class="panel-header flex-between">
+            <div>
+              <h3>📊 Tabela Completa de Classificações Sazonais</h3>
+              <p class="panel-desc">Todas as medalhas, estrelas e seus respectivos valores de MMR mínimo</p>
+            </div>
+            <div class="table-actions">
+              <input 
+                type="text" 
+                id="searchTableInput" 
+                class="table-search" 
+                placeholder="Filtrar medalha (ex: Lenda, 3080)..."
+              >
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="ranks-table" id="ranksTable">
+              <thead>
+                <tr>
+                  <th>Medalha</th>
+                  <th>Nível & Estrela</th>
+                  <th>MMR Mínimo</th>
+                  <th>Faixa até Próxima</th>
+                  <th>Item Inspirador</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody id="ranksTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Lore & Info Section -->
+      <section class="info-section">
+        <div class="grid-2-cols">
+          <div class="panel glass-card info-card">
+            <h4>📖 Como Funciona o Sistema de Medalhas</h4>
+            <ul>
+              <li><strong>Estimativas da Comunidade:</strong> A Valve não divulga publicamente a fórmula exata de corte para cada medalha; os valores refletem as observações consolidadas pela comunidade na Dota 2 Wiki.</li>
+              <li><strong>Porcentagem da Medalha:</strong> A porcentagem exibida abaixo da medalha no jogo calcula o quão próximo seu MMR está de desbloquear a próxima estrela da categoria.</li>
+              <li><strong>5 Estrelas por Nível:</strong> Desde a Temporada 4, cada categoria (Arauto até Divino) possui exatamente 5 estrelas.</li>
+              <li><strong>Imortal:</strong> Ao atingir 5620+ MMR, o jogador atinge a classificação Imortal e passa a disputar posição no ranking regional.</li>
+            </ul>
+          </div>
+
+          <div class="panel glass-card info-card">
+            <h4>⚔️ Inspiração nos Itens do Dota 2</h4>
+            <p class="info-intro">Você sabia? Cada medalha do Dota 2 foi desenhada com base em um item clássico do jogo:</p>
+            <div class="lore-grid">
+              <div class="lore-item"><span class="lore-tag">Arauto</span> Tango</div>
+              <div class="lore-item"><span class="lore-tag">Guardião</span> Broquel (Buckler)</div>
+              <div class="lore-item"><span class="lore-tag">Cruzado</span> Anel de Áquila</div>
+              <div class="lore-item"><span class="lore-tag">Arconte</span> Cetro Divino de Eul</div>
+              <div class="lore-item"><span class="lore-tag">Lenda</span> BKB (Bastão Preto)</div>
+              <div class="lore-item"><span class="lore-tag">Ancestral</span> Machado Ilusório (Manta)</div>
+              <div class="lore-item"><span class="lore-tag">Divino</span> Rapieira Divina</div>
+              <div class="lore-item"><span class="lore-tag">Imortal</span> Égide do Imortal</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-content">
+      <p>Desenvolvido com referência nas tabelas de classificações de <a href="https://dota2.fandom.com/pt/wiki/Cria%C3%A7%C3%A3o_de_partidas/Classifica%C3%A7%C3%B5es_sazonais" target="_blank" rel="noopener noreferrer">Dota 2 Wiki (Fandom)</a>.</p>
+      <p class="disclaimer">Dota 2 é uma marca registrada da Valve Corporation. Esta aplicação é um projeto de código aberto sem vínculo oficial com a Valve.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
